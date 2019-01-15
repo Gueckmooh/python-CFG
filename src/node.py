@@ -14,7 +14,7 @@ class node:
       s += "%s\n" % (x[1])
     s += "Destinations:\n"
     for x in self.dest:
-      s += "%s\n" % (x)
+      s += "%s (cond: %s)\n" % (x[0], x[1])
     return s
   def add_dest (self, dest):
     if isinstance (dest, list):
@@ -22,6 +22,9 @@ class node:
         self.dest.insert (len (self.dest), v)
     else:
       self.dest.insert (len (self.dest), dest)
+  # def set_dest_if_empty (self):
+  #   if dest == []:
+
   def get_dest (self):
     return self.dest
 

@@ -53,13 +53,18 @@ def get_target (jmp):
 
 def is_jump (stm):
   addr, instr, comm = stm
-  to_match = r'(b[a-z]*) ([0-9a-f]+|lr)'
+  to_match = r'(b([a-z]*)) ([0-9a-f]+|lr)'
   regex = re.compile (to_match)
   s = regex.search (instr)
   if s != None:
-    return True
+    cond = 'al'
+    if not s.groups()[1] in ("", "x"):
+      cond = s.groups()[1]
+    print (stm)
+    print (cond)
+    return cond
   else:
-    return False
+    return None
 
 @static_var ("seed", 0)
 def gen_node_name ():
@@ -67,24 +72,35 @@ def gen_node_name ():
   gen_node_name.seed += 1
   return name
 
+def cut_firstpass (function):
+  targets = set ()
+  for v in function:
+    if is_jump (v):
+      t = get_target (v)
+      if t != ():
+        targets.add (t[1])
+  print (targets)
+  return targets
+
 def cut (function):
+  targets = cut_firstpass (function)
   nodes = []
   f = function[::-1]
   dests = []
   while len (f) != 0:
-    # for v in f[::-1]:
-    #   print (v)
     for i in range (len (f)):
       if is_jump (f[i]):
         if i == 0:
+          stm = f[i]
           v = f[0]
           f = f[1:]
           t = get_target (v)
           if t == ():
-            dests.insert (len (dests), 'ret')
+            print (is_jump(stm))
+            dests.insert (len (dests), ('ret', is_jump(stm)))
           else:
             fun, off = t
-            dests.insert (len (dests), off)
+            dests.insert (len (dests), (off, is_jump(stm)))
           break
         else:
           a = f[:i]
@@ -100,7 +116,28 @@ def cut (function):
         f = []
         nodes.append (n)
         break
+      elif f[i][0] in targets:
+        print (f[i])
+        a = f[:i+1]
+        f = f[i+1:]
+        n = node (a[::-1][0][0], gen_node_name (), a[::-1])
+        n.add_dest (dests)
+        dests = []
+        nodes.append (n)
+        break
   return nodes
+
+def create_graph (nodes):
+  graph = {}
+  for n in nodes:
+    name = n.name
+    t = []
+    for d in n.get_dest ():
+      for m in nodes:
+        if m.addr == d:
+          t.append ((m.name, m))
+    graph[name] = t
+  return graph
 
 def test ():
   filename = "/home/brignone/Documents/Cours/M2/WCET/CFG-python/tests/example1.o"
@@ -112,7 +149,8 @@ def test ():
   nodes = cut (f)
   for n in nodes:
     print (n)
-
+  g = create_graph (nodes)
+  print (g)
 # Local Variables:
 # python-shell-interpreter: "python3.5"
 # End:
