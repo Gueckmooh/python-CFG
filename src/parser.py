@@ -133,6 +133,7 @@ def create_graph (nodes):
     name = n.name
     t = []
     for d in n.get_dest ():
+      print (d)
       for m in nodes:
         if m.addr == d:
           t.append ((m.name, m))
@@ -147,6 +148,10 @@ def test ():
   #   print (v)
   #   is_jump (v)
   nodes = cut (f)
+  for n in nodes:
+    print (n)
+  for n in nodes:
+    n.set_dest_if_empty ()
   for n in nodes:
     print (n)
   g = create_graph (nodes)
