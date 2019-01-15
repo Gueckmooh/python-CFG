@@ -63,6 +63,7 @@ def gen_dot_file (graph, node_map, filename):
           else:
             to_write.append ("    %s -> %s;\n" % (n, 'end'))
       else:
+        print (lbls)
         to_write.append ("    %s -> %s;\n" % ('start', list(lbls)[0]))
     write ('}\n')
     for v in to_write:

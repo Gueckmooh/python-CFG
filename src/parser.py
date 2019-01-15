@@ -4,6 +4,7 @@ import subprocess
 # import node
 
 CROSS_TARGET="arm-none-eabi-"
+main_begin = '0'
 
 def static_var (varname, value):
   def decorate (func):
@@ -49,7 +50,12 @@ def get_target (jmp):
   to_match = r'<([^+]+)\+0x([0-9a-f]+)>'
   regex = re.compile (to_match)
   s = regex.search (comm)
-  return s.groups()
+  f = s.groups()[0]
+  to_match = r'b[a-z]* ([0-9a-f]+|lr)'
+  regex = re.compile (to_match)
+  s = regex.search (instr)
+  addr = s.groups()[0]
+  return (f, addr)
 
 def is_jump (stm):
   addr, instr, comm = stm
@@ -143,7 +149,7 @@ def create_graph (nodes):
   t = []
   for d in n.get_dest ():
     for m in nodes:
-      if m.addr == '0':
+      if m.addr == main_begin:
         t.append ((m.name, m))
   if funcname in set ([x for x in graph]):
     graph[funcname][name] = t
@@ -152,9 +158,11 @@ def create_graph (nodes):
   return graph
 
 def test ():
-  filename = "/home/brignone/Documents/Cours/M2/WCET/CFG-python/tests/example1.o"
+  filename = "/home/brignone/Documents/Cours/M2/WCET/CFG-python/tests/example2.o"
   function = read_function (filename, "main")
   f = split_function (function)
+  global main_begin
+  main_begin = f[0][0]
   nodes = cut (f, "main")
   for n in nodes:
     n.set_dest_if_empty ()
