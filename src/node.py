@@ -41,7 +41,7 @@ class node:
       for v in dest:
         self.dest.append (v)
     else:
-      self.dest.insert (len (self.dest), dest)
+      self.dest.append (dest)
   def set_dest_if_empty (self):
     if not all_path_sat (self.dest):
       last = int (self.body[-1][0], 16)
@@ -50,6 +50,11 @@ class node:
       self.dest.append ((last, 'al'))
   def get_dest (self):
     return [v[0] for v in self.dest]
+  def get_dest_cond_map (self):
+    ret = {}
+    for v in self.dest:
+      ret[v[0]] = v[1]
+    return ret
 
 
 # Local Variables:
