@@ -60,8 +60,6 @@ def is_jump (stm):
     cond = 'al'
     if not s.groups()[1] in ("", "x"):
       cond = s.groups()[1]
-    print (stm)
-    print (cond)
     return cond
   else:
     return None
@@ -79,7 +77,6 @@ def cut_firstpass (function):
       t = get_target (v)
       if t != ():
         targets.add (t[1])
-  print (targets)
   return targets
 
 def cut (function):
@@ -96,7 +93,6 @@ def cut (function):
           f = f[1:]
           t = get_target (v)
           if t == ():
-            print (is_jump(stm))
             dests.insert (len (dests), ('ret', is_jump(stm)))
           else:
             fun, off = t
@@ -117,7 +113,6 @@ def cut (function):
         nodes.append (n)
         break
       elif f[i][0] in targets:
-        print (f[i])
         a = f[:i+1]
         f = f[i+1:]
         n = node (a[::-1][0][0], gen_node_name (), a[::-1])
@@ -133,9 +128,12 @@ def create_graph (nodes):
     name = n.name
     t = []
     for d in n.get_dest ():
-      for m in nodes:
-        if m.addr == d:
-          t.append ((m.name, m))
+      if d == 'ret':
+        t.append (('fini', None))
+      else:
+        for m in nodes:
+          if m.addr == d:
+            t.append ((m.name, m))
     graph[name] = t
   name = 'init'
   t = []
@@ -150,18 +148,10 @@ def test ():
   filename = "/home/brignone/Documents/Cours/M2/WCET/CFG-python/tests/example1.o"
   function = read_function (filename, "main")
   f = split_function (function)
-  # for v in f:
-  #   print (v)
-  #   is_jump (v)
   nodes = cut (f)
   for n in nodes:
-    print (n)
-  for n in nodes:
     n.set_dest_if_empty ()
-  for n in nodes:
-    print (n)
   g = create_graph (nodes)
-  print (g)
   node_map = {}
   for n in nodes:
     node_map[n.name] = n

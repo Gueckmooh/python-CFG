@@ -16,6 +16,7 @@ def gen_dot_file (graph, node_map, filename):
       file.write ("    %s [shape=box];\n" % (n))
       file.write ("    %s [label=\"%s\"];\n" % (n, node_map[n].get_content ()))
       for d in lbls:
+        print (d)
         file.write ("    %s -> %s\n" % (n, d))
     else:
         file.write ("    %s -> %s\n" % (n, list(lbls)[0]))
