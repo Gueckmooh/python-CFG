@@ -31,6 +31,11 @@ class node:
     for x in self.dest:
       s += "%s (cond: %s)\n" % (x[0], x[1])
     return s
+  def get_content (self):
+    s = ''
+    for x in self.body:
+      s += "%s\\n" % (x[1])
+    return s
   def add_dest (self, dest):
     if isinstance (dest, list):
       for v in dest:

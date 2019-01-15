@@ -133,11 +133,17 @@ def create_graph (nodes):
     name = n.name
     t = []
     for d in n.get_dest ():
-      print (d)
       for m in nodes:
         if m.addr == d:
           t.append ((m.name, m))
     graph[name] = t
+  name = 'init'
+  t = []
+  for d in n.get_dest ():
+    for m in nodes:
+      if m.addr == '0':
+        t.append ((m.name, m))
+  graph[name] = t
   return graph
 
 def test ():
@@ -156,6 +162,12 @@ def test ():
     print (n)
   g = create_graph (nodes)
   print (g)
+  node_map = {}
+  for n in nodes:
+    node_map[n.name] = n
+  gen_dot_file (g, node_map, 'output.dot')
+
+
 # Local Variables:
 # python-shell-interpreter: "python3.5"
 # End:
