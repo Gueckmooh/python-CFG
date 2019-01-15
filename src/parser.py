@@ -1,10 +1,15 @@
 #!/usr/bin/env python3.5
 import re
 import subprocess
-# import node
+from node import node
+from dot import *
 
 CROSS_TARGET="arm-none-eabi-"
 main_begin = '0'
+
+functions_to_parse = set ()
+functions_parsed = set ()
+begin_map = {}
 
 def static_var (varname, value):
   def decorate (func):
@@ -43,19 +48,22 @@ def split_function (function):
   new_function = [split_line (x) for x in function[1:]]
   return new_function
 
-def get_target (jmp):
+def get_target (jmp, funcname):
   addr, instr, comm = jmp
   if comm == "":
     return ()
-  to_match = r'<([^+]+)\+0x([0-9a-f]+)>'
+  to_match = r'<([^+]+)(\+0x([0-9a-f]+)|)>'
   regex = re.compile (to_match)
   s = regex.search (comm)
   f = s.groups()[0]
-  to_match = r'b[a-z]* ([0-9a-f]+|lr)'
-  regex = re.compile (to_match)
-  s = regex.search (instr)
-  addr = s.groups()[0]
-  return (f, addr)
+  if f != funcname:
+    return (f, '0')
+  else:
+    to_match = r'(b([a-z]*)) ([0-9a-f]+|lr)'
+    regex = re.compile (to_match)
+    s = regex.search (instr)
+    addr = s.groups()[2]
+    return (f, addr)
 
 def is_jump (stm):
   addr, instr, comm = stm
@@ -64,8 +72,10 @@ def is_jump (stm):
   s = regex.search (instr)
   if s != None:
     cond = 'al'
-    if not s.groups()[1] in ("", "x"):
+    if not s.groups()[1] in ("", "x", 'l'):
       cond = s.groups()[1]
+    elif s.groups()[1] == 'l':
+      cond = 'call'
     return cond
   else:
     return None
@@ -76,17 +86,24 @@ def gen_node_name ():
   gen_node_name.seed += 1
   return name
 
-def cut_firstpass (function):
+def cut_firstpass (function, funcname):
+  global functions_parsed
+  global functions_to_parse
   targets = set ()
   for v in function:
     if is_jump (v):
-      t = get_target (v)
+      t = get_target (v, funcname)
       if t != ():
-        targets.add (t[1])
+        if t[0] == funcname:
+          targets.add (t[1])
+        else:
+          if not t[0] in functions_parsed:
+            functions_to_parse.add (t[0])
   return targets
 
 def cut (function, funcname):
-  targets = cut_firstpass (function)
+  global begin_map
+  targets = cut_firstpass (function, funcname)
   nodes = []
   f = function[::-1]
   dests = []
@@ -97,12 +114,15 @@ def cut (function, funcname):
           stm = f[i]
           v = f[0]
           f = f[1:]
-          t = get_target (v)
+          t = get_target (v, funcname)
           if t == ():
-            dests.insert (len (dests), ('ret', is_jump(stm)))
+            dests.append (('ret', is_jump(stm)))
           else:
             fun, off = t
-            dests.insert (len (dests), (off, is_jump(stm)))
+            if fun == funcname:
+              dests.append ((off, is_jump(stm)))
+            else:
+              dests.append ((fun, is_jump(stm)))
           break
         else:
           a = f[:i]
@@ -117,6 +137,7 @@ def cut (function, funcname):
         n.add_dest (dests)
         f = []
         nodes.append (n)
+        begin_map[funcname] = n
         break
       elif f[i][0] in targets:
         a = f[:i+1]
@@ -158,21 +179,41 @@ def create_graph (nodes):
   return graph
 
 def test ():
-  filename = "/home/brignone/Documents/Cours/M2/WCET/CFG-python/tests/example2.o"
-  function = read_function (filename, "main")
-  f = split_function (function)
-  global main_begin
-  main_begin = f[0][0]
-  nodes = cut (f, "main")
-  for n in nodes:
-    n.set_dest_if_empty ()
-    print (n)
-  g = create_graph (nodes)
-  node_map = {}
-  for n in nodes:
-    node_map[n.name] = n
-  gen_dot_file (g, node_map, 'output.dot')
+  global functions_to_parse
+  global functions_parsed
+  filename = "/home/brignone/Documents/Cours/M2/WCET/CFG-python/tests/example3.o"
+  functions_to_parse.add ('main')
+  cfg = {}
+  gnode_map = {}
+  while len (functions_to_parse) != 0:
+    funcname = list(functions_to_parse)[0]
+    functions_to_parse.remove (funcname)
+    functions_parsed.add (funcname)
+    print ("Funcname -->", funcname)
+    function = read_function (filename, funcname)
+    f = split_function (function)
+    global main_begin
+    main_begin = f[0][0]
+    nodes = cut (f, funcname)
+    for n in nodes:
+      n.set_dest_if_empty ()
+      # print (n)
+    g = create_graph (nodes)
+    cfg = {**cfg, **g}
+    # print (g)
+    node_map = {}
+    for n in nodes:
+      node_map[n.name] = n
+    gnode_map = {**gnode_map, **node_map}
+  # print ("CFG", cfg)
+  # print ("NODE", gnode_map)
+  for n in gnode_map:
+    ret = gnode_map[n].fix_call (begin_map)
+    if ret != None:
+      cfg[ret[0]][ret[1]].append (ret[2])
+  gen_dot_file (cfg, gnode_map, 'output.dot')
 
+test ()
 
 # Local Variables:
 # python-shell-interpreter: "python3.5"

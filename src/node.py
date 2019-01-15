@@ -56,6 +56,13 @@ class node:
     for v in self.dest:
       ret[v[0]] = v[1]
     return ret
+  def fix_call (self, begin_map):
+    for v in self.dest:
+      if v[1] == 'call':
+        self.dest.remove (v)
+        self.dest.append ((begin_map[v[0]].addr, 'al'))
+        return (self.function, self.name,
+                (begin_map[v[0]].name, begin_map[v[0]]))
 
 
 # Local Variables:
