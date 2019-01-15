@@ -68,12 +68,12 @@ def gen_node_name ():
   return name
 
 def cut (function):
+  nodes = []
   f = function[::-1]
   dests = []
-  for pouet in range (5):
-    for v in f[::-1]:
-      print (v)
-    print ()
+  while len (f) != 0:
+    # for v in f[::-1]:
+    #   print (v)
     for i in range (len (f)):
       if is_jump (f[i]):
         if i == 0:
@@ -85,7 +85,6 @@ def cut (function):
           else:
             fun, off = t
             dests.insert (len (dests), off)
-          print (dests)
           break
         else:
           a = f[:i]
@@ -93,8 +92,15 @@ def cut (function):
           n = node (a[::-1][0][0], gen_node_name (), a[::-1])
           n.add_dest (dests)
           dests = []
-          print (n)
+          nodes.append (n)
           break
+      elif i == len (f) - 1: # no jumps found
+        n = node (f[::-1][0][0], gen_node_name (), f[::-1])
+        n.add_dest (dests)
+        f = []
+        nodes.append (n)
+        break
+  return nodes
 
 def test ():
   filename = "/home/brignone/Documents/Cours/M2/WCET/CFG-python/tests/example1.o"
@@ -103,7 +109,9 @@ def test ():
   # for v in f:
   #   print (v)
   #   is_jump (v)
-  cut (f)
+  nodes = cut (f)
+  for n in nodes:
+    print (n)
 
 # Local Variables:
 # python-shell-interpreter: "python3.5"
