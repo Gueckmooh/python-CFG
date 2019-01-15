@@ -12,7 +12,7 @@ def all_path_sat (dest):
     return False
 
 class node:
-  def __init__ (self, addr, name, body):
+  def __init__ (self, addr, name, body, function):
     """\
     node (addr, name, body)
       Takes its begin address, a name and a body
@@ -20,6 +20,7 @@ class node:
     self.addr = addr
     self.name = name
     self.body = body
+    self.function = function
     self.dest = []
   def test (self):
     print (all_path_sat (self.dest))

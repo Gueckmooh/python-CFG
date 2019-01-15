@@ -79,7 +79,7 @@ def cut_firstpass (function):
         targets.add (t[1])
   return targets
 
-def cut (function):
+def cut (function, funcname):
   targets = cut_firstpass (function)
   nodes = []
   f = function[::-1]
@@ -101,13 +101,13 @@ def cut (function):
         else:
           a = f[:i]
           f = f[i:]
-          n = node (a[::-1][0][0], gen_node_name (), a[::-1])
+          n = node (a[::-1][0][0], gen_node_name (), a[::-1], funcname)
           n.add_dest (dests)
           dests = []
           nodes.append (n)
           break
       elif i == len (f) - 1: # no jumps found
-        n = node (f[::-1][0][0], gen_node_name (), f[::-1])
+        n = node (f[::-1][0][0], gen_node_name (), f[::-1], funcname)
         n.add_dest (dests)
         f = []
         nodes.append (n)
@@ -115,7 +115,7 @@ def cut (function):
       elif f[i][0] in targets:
         a = f[:i+1]
         f = f[i+1:]
-        n = node (a[::-1][0][0], gen_node_name (), a[::-1])
+        n = node (a[::-1][0][0], gen_node_name (), a[::-1], funcname)
         n.add_dest (dests)
         dests = []
         nodes.append (n)
@@ -125,6 +125,7 @@ def cut (function):
 def create_graph (nodes):
   graph = {}
   for n in nodes:
+    funcname = n.function
     name = n.name
     t = []
     for d in n.get_dest ():
@@ -134,23 +135,30 @@ def create_graph (nodes):
         for m in nodes:
           if m.addr == d:
             t.append ((m.name, m))
-    graph[name] = t
+    if funcname in set ([x for x in graph]):
+      graph[funcname][name] = t
+    else:
+      graph[funcname] = {name:t}
   name = 'init'
   t = []
   for d in n.get_dest ():
     for m in nodes:
       if m.addr == '0':
         t.append ((m.name, m))
-  graph[name] = t
+  if funcname in set ([x for x in graph]):
+    graph[funcname][name] = t
+  else:
+    graph[funcname] = {name:t}
   return graph
 
 def test ():
   filename = "/home/brignone/Documents/Cours/M2/WCET/CFG-python/tests/example1.o"
   function = read_function (filename, "main")
   f = split_function (function)
-  nodes = cut (f)
+  nodes = cut (f, "main")
   for n in nodes:
     n.set_dest_if_empty ()
+    print (n)
   g = create_graph (nodes)
   node_map = {}
   for n in nodes:
