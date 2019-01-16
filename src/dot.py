@@ -1,4 +1,6 @@
-from node import node
+import __main__ as main
+if hasattr(main, '__file__'):
+  from node import node
 import sys
 
 def static_var (varname, value):
@@ -40,47 +42,55 @@ def get_label (n):
 def gen_dot_file (graph, node_map, filename):
   to_write = []
   write = sys.stdout.write
-  try:
-    file = open (filename, "w")
-  except IOError:
-    sys.stderr.write ("Could not open %s\n" % (filename))
-    sys.exit (1)
-  file.write ("digraph G {\n")
+  if filename != "":
+    try:
+      file = open (filename, "w")
+    except IOError:
+      sys.stderr.write ("Could not open %s\n" % (filename))
+      sys.exit (1)
+    write = file.write
+  else:
+    write = sys.stdout.write
+  write ("digraph G {\n")
   for f in graph:
-    file.write ("subgraph %s {\n" % (name_cluster ()))
-    file.write ("    node [style=filled];\n")
-    file.write ('    label = "%s";\n' % (f))
-    file.write ("    color = blue;\n")
+    write ("subgraph %s {\n" % (name_cluster ()))
+    write ("    node [style=filled];\n")
+    write ('    label = "%s";\n' % (f))
+    write ("    color = blue;\n")
     gg = graph[f]
     for n in gg:
       lbls = set ([lbl[0] for lbl in gg[n]])
       if n != 'init':
-        file.write ("    %s [shape=box];\n" % (n))
-        file.write ("    %s [label=\"%s\"];\n" % (n, node_map[n].get_content ()))
+        write ("    %s [shape=box];\n" % (n))
+        write ("    %s [label=\"%s\"];\n" % (n, node_map[n].get_content ()))
         dests = node_map[n].get_dest_cond_map ()
-        for d in lbls:
-          if d != 'fini':
+        for d, fun in gg[n]:
+          if not d in ('fini', 'extern'):
             if node_map[d].function != node_map[n].function:
               to_write.append ("    %s -> %s [label=\"Call\",style=dotted];\n" % (n, d))
             else:
               cond =dests[node_map[d].addr]
-              file.write ("    %s -> %s%s;\n" % (n, d, get_label (cond)))
+              write ("    %s -> %s%s;\n" % (n, d, get_label (cond)))
+          elif d == 'extern':
+            nm = name_ends ()
+            to_write.append ("    %s -> %s [label=\"Call\",style=dotted];\n" % (n, nm))
+            to_write.append ("    %s [label=\"bar\",shape=hexagon];\n" % (nm))
           else:
             if f == 'main':
               to_write.append ("    %s -> %s;\n" % (n, 'end'))
             else:
               nm = name_ends ()
-              file.write ("    %s -> %s;" % (n, nm))
-              file.write ("    %s [label=\"return\"];" % (nm))
+              write ("    %s -> %s;" % (n, nm))
+              write ("    %s [label=\"return\"];" % (nm))
       else:
         if node_map[list(lbls)[0]].function == "main":
           to_write.append ("    %s -> %s;\n" % ('start', list(lbls)[0]))
-    file.write ('}\n')
+    write ('}\n')
   for v in to_write:
-    file.write (v)
-  file.write ("start [shape=Mdiamond]\n")
-  file.write ("end [shape=Msquare]\n")
-  file.write ('}')
+    write (v)
+  write ("start [shape=Mdiamond]\n")
+  write ("end [shape=Msquare]\n")
+  write ('}')
 
 # Local Variables:
 # python-shell-interpreter: "python3.5"

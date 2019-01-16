@@ -1,12 +1,15 @@
 #!/usr/bin/env python3.5
 import re
 import subprocess
-from node import node
-from dot import *
+import __main__ as main
+if hasattr(main, '__file__'):
+  from node import node
+  from dot import *
 
 CROSS_TARGET="arm-none-eabi-"
 main_begin = '0'
 
+external_functions = set ()
 functions_to_parse = set ()
 functions_parsed = set ()
 begin_map = {}
@@ -80,6 +83,15 @@ def is_jump (stm):
   else:
     return None
 
+def is_call (stm):
+  if not is_jump (stm):
+    return False
+  addr, instr, comm = stm
+  to_match = r'(bl) ([0-9a-f]+|lr)'
+  regex = re.compile (to_match)
+  s = regex.search (instr)
+  return s != None
+
 @static_var ("seed", 0)
 def gen_node_name ():
   name = 'n_%d' % (gen_node_name.seed)
@@ -109,7 +121,7 @@ def cut (function, funcname):
   dests = []
   while len (f) != 0:
     for i in range (len (f)):
-      if is_jump (f[i]):
+      if is_jump (f[i]) and not is_call (f[i]):
         if i == 0:
           stm = f[i]
           v = f[0]
@@ -132,6 +144,23 @@ def cut (function, funcname):
           dests = []
           nodes.append (n)
           break
+
+      elif is_call (f[i]): # If there is a function call
+        if i != 0:
+          a = f[:i]
+          n = node (a[::-1][0][0], gen_node_name (), a[::-1], funcname)
+          n.add_dest (dests)
+          nodes.append (n)
+          dests = []
+        t = get_target (f[i], funcname)
+        fun, off = t
+        dests.append ((fun, "call"))
+        addr, instr, comm = f[i]
+        f[i] = (addr, 'call %s' % (fun), comm)
+        if i != 0:
+          f = f[i:]
+        break;
+
       elif i == len (f) - 1: # no jumps found
         n = node (f[::-1][0][0], gen_node_name (), f[::-1], funcname)
         n.add_dest (dests)
@@ -139,7 +168,8 @@ def cut (function, funcname):
         nodes.append (n)
         begin_map[funcname] = n
         break
-      elif f[i][0] in targets:
+
+      elif f[i][0] in targets: # We jump to this block
         a = f[:i+1]
         f = f[i+1:]
         n = node (a[::-1][0][0], gen_node_name (), a[::-1], funcname)
@@ -181,6 +211,8 @@ def create_graph (nodes):
 def make_cfg (input_name, output_name):
   global functions_to_parse
   global functions_parsed
+  global main_begin
+  global external_functions
   filename = input_name
   functions_to_parse.add ('main')
   cfg = {}
@@ -191,26 +223,36 @@ def make_cfg (input_name, output_name):
     functions_parsed.add (funcname)
     function = read_function (filename, funcname)
     f = split_function (function)
-    global main_begin
+    if f == []:
+      external_functions.add (funcname)
+      continue
     main_begin = f[0][0]
     nodes = cut (f, funcname)
     for n in nodes:
       n.set_dest_if_empty ()
-      # print (n)
     g = create_graph (nodes)
     cfg = {**cfg, **g}
-    # print (g)
     node_map = {}
     for n in nodes:
       node_map[n.name] = n
     gnode_map = {**gnode_map, **node_map}
-  # print ("CFG", cfg)
-  # print ("NODE", gnode_map)
   for n in gnode_map:
-    ret = gnode_map[n].fix_call (begin_map)
+    ret = gnode_map[n].fix_call (begin_map, external_functions)
     if ret != None:
-      cfg[ret[0]][ret[1]].append (ret[2])
+      for v in ret[2]:
+        cfg[ret[0]][ret[1]].append (v)
   gen_dot_file (cfg, gnode_map, output_name)
+
+def test ():
+  global functions_to_parse
+  global functions_parsed
+  global begin_map
+  global external_functions
+  functions_to_parse = set ()
+  functions_parsed = set ()
+  begin_map = {}
+  external_functions = set ()
+  make_cfg ("/home/brignone/Documents/Cours/M2/WCET/CFG-python/tests/example4.o", "")
 
 # Local Variables:
 # python-shell-interpreter: "python3.5"
