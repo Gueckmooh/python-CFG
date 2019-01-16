@@ -8,6 +8,12 @@ def static_var (varname, value):
   return decorate
 
 @static_var ("seed", 0)
+def name_ends ():
+  s = 'lend%d' % name_cluster.seed
+  name_cluster.seed += 1
+  return s
+
+@static_var ("seed", 0)
 def name_cluster ():
   s = 'cluster%d' % name_cluster.seed
   name_cluster.seed += 1
@@ -55,20 +61,24 @@ def gen_dot_file (graph, node_map, filename):
         for d in lbls:
           if d != 'fini':
             if node_map[d].function != node_map[n].function:
-              to_write.append ("    %s -> %s;\n" % (n, d))
+              to_write.append ("    %s -> %s [label=\"Call\",style=dotted];\n" % (n, d))
             else:
               cond =dests[node_map[d].addr]
               file.write ("    %s -> %s%s;\n" % (n, d, get_label (cond)))
           else:
             if f == 'main':
               to_write.append ("    %s -> %s;\n" % (n, 'end'))
+            else:
+              nm = name_ends ()
+              file.write ("    %s -> %s;" % (n, nm))
+              file.write ("    %s [label=\"return\"];" % (nm))
       else:
         if node_map[list(lbls)[0]].function == "main":
           to_write.append ("    %s -> %s;\n" % ('start', list(lbls)[0]))
     file.write ('}\n')
   for v in to_write:
     file.write (v)
-  file.write ("start [shape=Mdiamound]\n")
+  file.write ("start [shape=Mdiamond]\n")
   file.write ("end [shape=Msquare]\n")
   file.write ('}')
 

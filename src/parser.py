@@ -178,10 +178,10 @@ def create_graph (nodes):
     graph[funcname] = {name:t}
   return graph
 
-def test ():
+def make_cfg (input_name, output_name):
   global functions_to_parse
   global functions_parsed
-  filename = "/home/brignone/Documents/Cours/M2/WCET/CFG-python/tests/example3.o"
+  filename = input_name
   functions_to_parse.add ('main')
   cfg = {}
   gnode_map = {}
@@ -189,7 +189,6 @@ def test ():
     funcname = list(functions_to_parse)[0]
     functions_to_parse.remove (funcname)
     functions_parsed.add (funcname)
-    print ("Funcname -->", funcname)
     function = read_function (filename, funcname)
     f = split_function (function)
     global main_begin
@@ -211,9 +210,7 @@ def test ():
     ret = gnode_map[n].fix_call (begin_map)
     if ret != None:
       cfg[ret[0]][ret[1]].append (ret[2])
-  gen_dot_file (cfg, gnode_map, 'output.dot')
-
-test ()
+  gen_dot_file (cfg, gnode_map, output_name)
 
 # Local Variables:
 # python-shell-interpreter: "python3.5"
