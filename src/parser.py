@@ -20,6 +20,18 @@ def static_var (varname, value):
     return func
   return decorate
 
+def cleanup_function (function):
+  newfun = []
+  regex = re.compile(r'(.word|@plt>:)')
+  for i in function:
+    s = regex.search (i)
+    if s != None:
+      if s.groups ()[0] == '@plt>:':
+        return []
+    else:
+      newfun.append (i)
+  return newfun
+
 def read_function (filename, funcname):
   command = "%sobjdump -d %s" % (CROSS_TARGET, filename)
   command = command.split ()
@@ -156,7 +168,7 @@ def cut (function, funcname):
         fun, off = t
         dests.append ((fun, "call"))
         addr, instr, comm = f[i]
-        f[i] = (addr, 'call %s' % (fun), comm)
+        f[i] = (addr, 'call %s' % (re.sub (r'@plt', '', fun)), comm)
         if i != 0:
           f = f[i:]
         break;
@@ -222,6 +234,7 @@ def make_cfg (input_name, output_name):
     functions_to_parse.remove (funcname)
     functions_parsed.add (funcname)
     function = read_function (filename, funcname)
+    function = cleanup_function (function)
     f = split_function (function)
     if f == []:
       external_functions.add (funcname)
@@ -252,7 +265,7 @@ def test ():
   functions_parsed = set ()
   begin_map = {}
   external_functions = set ()
-  make_cfg ("/home/brignone/Documents/Cours/M2/WCET/CFG-python/tests/example4.o", "")
+  make_cfg ("/home/brignone/Documents/Cours/M2/WCET/CFG-python/tests/example5", "")
 
 # Local Variables:
 # python-shell-interpreter: "python3.5"

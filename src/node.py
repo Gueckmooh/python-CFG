@@ -24,9 +24,6 @@ class node:
     self.function = function
     self.dest = []
 
-  def test (self):
-    print (all_path_sat (self.dest))
-
   def __str__ (self):
     s = "%s: Node %s\n" % (self.addr, self.name)
     if isinstance (self.body, list):

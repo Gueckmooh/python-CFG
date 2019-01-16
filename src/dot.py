@@ -2,6 +2,7 @@ import __main__ as main
 if hasattr(main, '__file__'):
   from node import node
 import sys
+import re
 
 def static_var (varname, value):
   def decorate (func):
@@ -74,7 +75,8 @@ def gen_dot_file (graph, node_map, filename):
           elif d == 'extern':
             nm = name_ends ()
             to_write.append ("    %s -> %s [label=\"Call\",style=dotted];\n" % (n, nm))
-            to_write.append ("    %s [label=\"bar\",shape=hexagon];\n" % (nm))
+            to_write.append ("    %s [label=\"%s\",shape=hexagon];\n" %
+                             (nm, re.sub (r'@plt', '', fun)))
           else:
             if f == 'main':
               to_write.append ("    %s -> %s;\n" % (n, 'end'))
