@@ -1,6 +1,6 @@
 import __main__ as main
 if hasattr(main, '__file__'):
-  from node import node
+  from lib.node import node
 import sys
 import re
 
@@ -40,8 +40,9 @@ def get_label (n):
     return ''
   return ' [label="%s"]' % (s)
 
-def gen_dot_file (graph, node_map, filename):
+def gen_dot_file (graph, node_map, filename, basefunc='main'):
   to_write = []
+  extern_funs = {}
   write = sys.stdout.write
   if filename != "":
     try:
@@ -73,19 +74,24 @@ def gen_dot_file (graph, node_map, filename):
               cond =dests[node_map[d].addr]
               write ("    %s -> %s%s;\n" % (n, d, get_label (cond)))
           elif d == 'extern':
-            nm = name_ends ()
-            to_write.append ("    %s -> %s [label=\"Call\",style=dotted];\n" % (n, nm))
-            to_write.append ("    %s [label=\"%s\",shape=hexagon];\n" %
-                             (nm, re.sub (r'@plt', '', fun)))
+            if fun in extern_funs:
+              nm = extern_funs[fun]
+              to_write.append ("    %s -> %s [label=\"Call\",style=dotted];\n" % (n, nm))
+            else:
+              nm = name_ends ()
+              to_write.append ("    %s -> %s [label=\"Call\",style=dotted];\n" % (n, nm))
+              to_write.append ("    %s [label=\"%s\",shape=hexagon];\n" %
+                               (nm, re.sub (r'@plt', '', fun)))
+              extern_funs[fun] = nm
           else:
-            if f == 'main':
+            if f == basefunc:
               to_write.append ("    %s -> %s;\n" % (n, 'end'))
             else:
               nm = name_ends ()
               write ("    %s -> %s;" % (n, nm))
               write ("    %s [label=\"return\"];" % (nm))
       else:
-        if node_map[list(lbls)[0]].function == "main":
+        if node_map[list(lbls)[0]].function == basefunc:
           to_write.append ("    %s -> %s;\n" % ('start', list(lbls)[0]))
     write ('}\n')
   for v in to_write:

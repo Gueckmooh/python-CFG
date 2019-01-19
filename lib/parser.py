@@ -1,10 +1,11 @@
 #!/usr/bin/env python3.5
+
 import re
 import subprocess
 import __main__ as main
 if hasattr(main, '__file__'):
-  from node import node
-  from dot import *
+  from lib.node import node
+  from lib.dot import *
 
 CROSS_TARGET="arm-none-eabi-"
 main_begin = '0'
@@ -256,6 +257,30 @@ def make_cfg (input_name, output_name):
         cfg[ret[0]][ret[1]].append (v)
   gen_dot_file (cfg, gnode_map, output_name)
 
+
+
+def make_one_cfg (input_name, output_name, function_name):
+  global main_begin
+  global external_functions
+  filename = input_name
+  cfg = {}
+  gnode_map = {}
+  funcname = function_name
+  function = read_function (filename, funcname)
+  function = cleanup_function (function)
+  f = split_function (function)
+  main_begin = f[0][0]
+  nodes = cut (f, funcname)
+  for n in nodes:
+    n.set_dest_if_empty ()
+  g = create_graph (nodes)
+  cfg = {**cfg, **g}
+  node_map = {}
+  for n in nodes:
+    node_map[n.name] = n
+  gnode_map = {**gnode_map, **node_map}
+  gen_dot_file (cfg, gnode_map, output_name, funcname)
+
 def test ():
   global functions_to_parse
   global functions_parsed
@@ -266,6 +291,8 @@ def test ():
   begin_map = {}
   external_functions = set ()
   make_cfg ("/home/brignone/Documents/Cours/M2/WCET/CFG-python/tests/example5", "")
+
+
 
 # Local Variables:
 # python-shell-interpreter: "python3.5"

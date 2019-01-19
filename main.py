@@ -1,4 +1,6 @@
-from parser import make_cfg
+#!/usr/bin/env python3.5
+
+from lib.parser import make_cfg, make_one_cfg
 import sys
 import getopt
 import textwrap
@@ -27,25 +29,32 @@ def usage (retval):
 
 output_name = ''
 input_name = ''
+only_f = None
 
 def parse_command ():
   global output_name
   global input_name
+  global only_f
   optlist, args = getopt.getopt (sys.argv[1:], "ho:",[
-    'help', 'output='
+    'help', 'output=', 'only='
   ])
   for o, a in optlist:
     if o in ('-h', '--help'):
       usage (0)
     elif o in ('-o', '--output'):
       output_name = a
+    elif o == '--only':
+      only_f = a
+  if len (args) == 0:
+    usage (1)
   input_name = args[0]
 
 parse_command ()
 
 if input_name == '':
   usage (1)
-if output_name == '':
-  usage (1)
 
-make_cfg (input_name, output_name)
+if not only_f:
+  make_cfg (input_name, output_name)
+else:
+  make_one_cfg (input_name, output_name, only_f)
