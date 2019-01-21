@@ -243,7 +243,14 @@ def create_graph (nodes):
     graph[funcname] = {name:t}
   return graph
 
-def make_cfg (input_name, output_name):
+def borring_print (node_map):
+  node_names = {}
+  for k in node_map:
+    node_names [node_map [k].addr] = k
+  for k in node_map:
+    print (node_map[k].borring_string (node_names))
+
+def make_cfg (input_name, output_name, borring = False):
   global functions_to_parse
   global functions_parsed
   global main_begin
@@ -277,11 +284,14 @@ def make_cfg (input_name, output_name):
     if ret != None:
       for v in ret[2]:
         cfg[ret[0]][ret[1]].append (v)
-  gen_dot_file (cfg, gnode_map, output_name)
+  if borring:
+    borring_print (gnode_map)
+  else:
+    gen_dot_file (cfg, gnode_map, output_name)
 
 
 
-def make_one_cfg (input_name, output_name, function_name):
+def make_one_cfg (input_name, output_name, function_name, borring = False):
   global main_begin
   global external_functions
   filename = input_name
@@ -301,7 +311,10 @@ def make_one_cfg (input_name, output_name, function_name):
   for n in nodes:
     node_map[n.name] = n
   gnode_map = {**gnode_map, **node_map}
-  gen_dot_file (cfg, gnode_map, output_name, funcname)
+  if borring:
+    borring_print (gnode_map)
+  else:
+    gen_dot_file (cfg, gnode_map, output_name, funcname)
 
 def test ():
   global functions_to_parse

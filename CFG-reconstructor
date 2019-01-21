@@ -16,6 +16,8 @@ def usage (retval):
       -h, --help               Display this information.
       -o, --output <name>      Saves the dot output in <file>.
       -f, --function <name>    Generates a CFG for <function> only.
+      -b, --borring-print       Prints the internal structure rather than
+                               generating dot.\
     """ % prgname)
     print (message)
     sys.exit (retval)
@@ -32,13 +34,15 @@ def usage (retval):
 output_name = ''
 input_name = ''
 function_name = None
+borring = False
 
 def parse_command ():
   global output_name
   global input_name
   global function_name
-  optlist, args = getopt.getopt (sys.argv[1:], "ho:f:",[
-    'help', 'output=', 'function='
+  global borring
+  optlist, args = getopt.getopt (sys.argv[1:], "ho:f:b",[
+    'help', 'output=', 'function=', 'borring-print'
   ])
   for o, a in optlist:
     if o in ('-h', '--help'):
@@ -47,6 +51,8 @@ def parse_command ():
       output_name = a
     elif o in ('-f', '--function'):
       function_name = a
+    elif o in ('-b', '--borring-print'):
+      borring = True
   if len (args) == 0:
     usage (1)
   input_name = args[0]
@@ -57,6 +63,6 @@ if input_name == '':
   usage (1)
 
 if not function_name:
-  make_cfg (input_name, output_name)
+  make_cfg (input_name, output_name, borring = borring)
 else:
-  make_one_cfg (input_name, output_name, function_name)
+  make_one_cfg (input_name, output_name, function_name, borring = borring)

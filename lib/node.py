@@ -36,6 +36,17 @@ class node:
       s += "%s (cond: %s)\n" % (x[0], x[1])
     return s
 
+  def borring_string (self, names):
+    s = 'Basic block %s\n' % (self.name)
+    s += 'Body:\n'
+    for v in self.body:
+      s += "\t%s\n" % (v[1])
+    s += 'Successors:\n'
+    for x in self.dest:
+      if x[1] not in ('call', 'extern') and x[0] != 'ret':
+        s += "\t%s\n" % (names[x[0]])
+    return s
+
   def get_content (self):
     s = ''
     if isinstance (self.body, list):
