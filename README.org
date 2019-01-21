@@ -1,3 +1,10 @@
-* Improvements
+* Improvements :noexport:
   - [X] Multiple printfs
   - [X] Print only one function
+
+* How to use it
+  This program takes as input an elf file or an objdump of an elf file
+  and gives as output a dot file that represents the CFG of the program.
+  The name of a function can be specified to get only its CFG. 
+  A "borring output" can be visualized, it contains the internal structure
+  of the graph.

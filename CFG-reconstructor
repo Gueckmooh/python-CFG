@@ -16,7 +16,7 @@ def usage (retval):
       -h, --help               Display this information.
       -o, --output <name>      Saves the dot output in <file>.
       -f, --function <name>    Generates a CFG for <function> only.
-      -b, --borring-print       Prints the internal structure rather than
+      -b, --borring-print      Prints the internal structure rather than
                                generating dot.\
     """ % prgname)
     print (message)
