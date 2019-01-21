@@ -15,6 +15,17 @@ functions_to_parse = set ()
 functions_parsed = set ()
 begin_map = {}
 
+def is_objdump (filename):
+  command = "file %s" % filename
+  command = command.split ()
+  p = subprocess.Popen (command, stdout=subprocess.PIPE)
+  out, err = p.communicate ()
+  out = out.decode ("utf-8")
+  p.kill ()
+  regex = re.compile (r'(ASCII|UTF-8)')
+  s = regex.search (out)
+  return s != None
+
 def static_var (varname, value):
   def decorate (func):
     setattr (func, varname, value)
@@ -34,20 +45,31 @@ def cleanup_function (function):
   return newfun
 
 def read_function (filename, funcname):
-  command = "%sobjdump -d %s" % (CROSS_TARGET, filename)
-  command = command.split ()
-  p = subprocess.Popen (command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-  out, err = p.communicate ()
-  p.kill ()
-  command = "awk  -v  RS=  /^[[:xdigit:]]+ <%s>\:/" % (funcname)
-  command = command.split ('  ')
-  p = subprocess.Popen (command, stdout=subprocess.PIPE,
-                         stdin=subprocess.PIPE)
-  out, err = p.communicate (out)
-  p.kill ()
-  out = out.decode ("utf-8").split ("\n")
-  out.remove ("")
-  return out
+  if is_objdump (filename):
+    command = "awk  -v  RS=  /^[[:xdigit:]]+ <%s>\:/  %s" % (funcname, filename)
+    p = subprocess.Popen (command.split ("  "), stdout=subprocess.PIPE,
+                          stderr=subprocess.PIPE)
+    out, err = p.communicate ()
+    p.kill ()
+    out = out.decode ("utf-8").split ("\n")
+    out.remove ("")
+    return out
+  else:
+    command = "%sobjdump -d %s" % (CROSS_TARGET, filename)
+    command = command.split ()
+    p = subprocess.Popen (command, stdout=subprocess.PIPE,
+                          stderr=subprocess.PIPE)
+    out, err = p.communicate ()
+    p.kill ()
+    command = "awk  -v  RS=  /^[[:xdigit:]]+ <%s>\:/" % (funcname)
+    command = command.split ('  ')
+    p = subprocess.Popen (command, stdout=subprocess.PIPE,
+                          stdin=subprocess.PIPE)
+    out, err = p.communicate (out)
+    p.kill ()
+    out = out.decode ("utf-8").split ("\n")
+    out.remove ("")
+    return out
 
 def clean_whitespaces (s):
   s = re.sub (r'\s+', ' ', s)
@@ -290,7 +312,8 @@ def test ():
   functions_parsed = set ()
   begin_map = {}
   external_functions = set ()
-  make_cfg ("/home/brignone/Documents/Cours/M2/WCET/CFG-python/tests/example5", "")
+  make_cfg ("/home/brignone/Documents/Cours/M2/WCET/CFG-python/tests/example5",
+            "")
 
 
 

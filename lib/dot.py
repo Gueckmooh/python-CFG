@@ -69,17 +69,20 @@ def gen_dot_file (graph, node_map, filename, basefunc='main'):
         for d, fun in gg[n]:
           if not d in ('fini', 'extern'):
             if node_map[d].function != node_map[n].function:
-              to_write.append ("    %s -> %s [label=\"Call\",style=dotted];\n" % (n, d))
+              to_write.append ("    %s -> %s [label=\"Call\",style=dotted];\n" %
+                               (n, d))
             else:
               cond =dests[node_map[d].addr]
               write ("    %s -> %s%s;\n" % (n, d, get_label (cond)))
           elif d == 'extern':
             if fun in extern_funs:
               nm = extern_funs[fun]
-              to_write.append ("    %s -> %s [label=\"Call\",style=dotted];\n" % (n, nm))
+              to_write.append ("    %s -> %s [label=\"Call\",style=dotted];\n" %
+                               (n, nm))
             else:
               nm = name_ends ()
-              to_write.append ("    %s -> %s [label=\"Call\",style=dotted];\n" % (n, nm))
+              to_write.append ("    %s -> %s [label=\"Call\",style=dotted];\n" %
+                               (n, nm))
               to_write.append ("    %s [label=\"%s\",shape=hexagon];\n" %
                                (nm, re.sub (r'@plt', '', fun)))
               extern_funs[fun] = nm
