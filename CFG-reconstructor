@@ -59,4 +59,4 @@ if input_name == '':
 if not function_name:
   make_cfg (input_name, output_name)
 else:
-  make_one_cfg (input_name, output_name, only_f)
+  make_one_cfg (input_name, output_name, function_name)
